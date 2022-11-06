@@ -13,7 +13,7 @@ from quspin.operators import hamiltonian
 
 #matplotlib.rc('font', **font)
 
-import gen_hubbard_1d
+import hubbard_1d
 import fourier_filter
 import generate_cdf
 
@@ -35,11 +35,11 @@ N_up = L//2 + L % 2 # number of fermions with spin up
 N_down = L//2 # number of fermions with spin down
 mu = 0.0
 
-H = gen_hubbard_1d.generate_ham(L,J,U,mu,N_up,N_down)
+H = hubbard_1d.generate_ham(L,J,U,mu,N_up,N_down)
 H_sparse = H.tocsr()
 ew, ev = la.eigh(H_sparse.toarray())
 
-H0 = gen_hubbard_1d.generate_ham(L,J,0,mu,N_up,N_down)
+H0 = hubbard_1d.generate_ham(L,J,0,mu,N_up,N_down)
 H0_sparse = H0.tocsr()
 ew0, ev0 = la.eigh(H0_sparse.toarray())
 
