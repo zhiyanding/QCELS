@@ -1,4 +1,4 @@
-"""Generate the Hamiltonian for 1D spinful Hubbard.
+"""Generate the Hamiltonian for the 1D spinful Hubbard model.
 
 The implementation uses quspin. The periodic boundary condition is not
 enforced. The interaction term is z|z, where z=c^{\dag}c-1/2
