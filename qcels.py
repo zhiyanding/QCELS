@@ -29,34 +29,28 @@ def get_estimated_ground_energy_rough(d,delta,spectrum,population,Nsample,Nbatch
     
     F_coeffs = fourier_filter.F_fourier_coeffs(d,delta)
 
-#     print("ground energy:",ground_energy)
     compute_prob_X = lambda T: generate_cdf.compute_prob_X_(T,spectrum,population)
     compute_prob_Y = lambda T: generate_cdf.compute_prob_Y_(T,spectrum,population)
 
-#     Nsample = 150
-#     Nbatch = 10
 
     outcome_X_arr, outcome_Y_arr, J_arr = generate_cdf.sample_XY(compute_prob_X, 
-                                compute_prob_Y, F_coeffs, Nsample, Nbatch) #N_s=Nsample*Nbatch
+                                compute_prob_Y, F_coeffs, Nsample, Nbatch) #Generate sample to calculate CDF
 
     total_evolution_time = np.sum(np.abs(J_arr))
     average_evolution_time = total_evolution_time/(Nsample*Nbatch)
     maxi_evolution_time=max(np.abs(J_arr[0,:]))
-#     print("Total evolution time:", np.sum(np.abs(J_arr)))
-#     print("Average evolution time:", np.sum(np.abs(J_arr))/(Nsample*Nbatch))
 
     Nx = 10
     Lx = np.pi/3
     ground_energy_estimate = 0.0
     count = 0
-#     print("Running energy estimation at d=",d,"delta=",delta)
+    #---"binary" search
     while Lx > delta:
         x = (2*np.arange(Nx)/Nx-1)*Lx +  ground_energy_estimate
-        y_avg = generate_cdf.compute_cdf_from_XY(x, outcome_X_arr, outcome_Y_arr, J_arr, F_coeffs)
+        y_avg = generate_cdf.compute_cdf_from_XY(x, outcome_X_arr, outcome_Y_arr, J_arr, F_coeffs)#Calculate the value of CDF
         indicator_list = y_avg > (population[0]/2.05)
         ix = np.nonzero(indicator_list)[0][0]
         ground_energy_estimate = x[ix]
-#         print("--Estimated ground energy at precision", Lx/2, "is" ,ground_energy_estimate)
         Lx = Lx/2
         count += 1
     
@@ -67,9 +61,10 @@ def generate_filtered_Z_est(spectrum,population,t,x,d,delta,Nsample,Nbatch):
     F_coeffs = fourier_filter.F_fourier_coeffs(d,delta)
     compute_prob_X = lambda t_: generate_cdf.compute_prob_X_(t_,spectrum,population)
     compute_prob_Y = lambda t_: generate_cdf.compute_prob_Y_(t_,spectrum,population)
+    #Calculate <\psi|F(H)\exp(-itH)|\psi>
     outcome_X_arr, outcome_Y_arr, J_arr = generate_cdf.sample_XY_QCELS(compute_prob_X, 
-                                compute_prob_Y, F_coeffs, Nsample, Nbatch,t) #N_s=Nsample*Nbatch
-    y_avg = generate_cdf.compute_cdf_from_XY_QCELS(x, outcome_X_arr, outcome_Y_arr, J_arr, F_coeffs)
+                                compute_prob_Y, F_coeffs, Nsample, Nbatch,t) #Generate samples using Hadmard test
+    y_avg = generate_cdf.compute_cdf_from_XY_QCELS(x, outcome_X_arr, outcome_Y_arr, J_arr, F_coeffs) 
     total_time = np.sum(np.abs(J_arr))+t*Nsample*Nbatch
     max_time= max(np.abs(J_arr[0,:]))+t
     return y_avg, total_time, max_time
@@ -81,6 +76,7 @@ def generate_Z_est(spectrum,population,t,Nsample):
     z=np.dot(population,np.exp(-1j*spectrum*t))
     Re_true=(1+z.real)/2
     Im_true=(1+z.imag)/2
+    #Simulate Hadmard test
     for nt in range(Nsample):
         if np.random.uniform(0,1)<Re_true:
            Re+=1
@@ -96,13 +92,12 @@ def generate_Z_est(spectrum,population,t,Nsample):
 def generate_spectrum_population(eigenenergies, population, p):
 
     p = np.array(p)
-    spectrum = eigenenergies * 0.25*np.pi/np.max(np.abs(eigenenergies))
+    spectrum = eigenenergies * 0.25*np.pi/np.max(np.abs(eigenenergies))#normalize the spectrum
     q = population
     print(p)
     num_p = p.shape[0]
     q[0:num_p] = p/(1-np.sum(p))*np.sum(q[num_p:])
     return spectrum, q/np.sum(q)
-
 
 def qcels_opt_fun(x, ts, Z_est):
     NT = ts.shape[0]
@@ -115,9 +110,9 @@ def qcels_opt(ts, Z_est, x0, bounds = None, method = 'SLSQP'):
 
     fun = lambda x: qcels_opt_fun(x, ts, Z_est)
     if( bounds ):
-        res=minimize(fun,x0,method=method,bounds=bounds)
+        res=minimize(fun,x0,method = 'SLSQP',bounds=bounds)
     else:
-        res=minimize(fun,x0,method=method,bounds=bounds)
+        res=minimize(fun,x0,method = 'SLSQP',bounds=bounds)
 
     return res
 
@@ -141,35 +136,42 @@ def qcels_largeoverlap(spectrum, population, T, NT, Nsample, lambda_prior):
     ts=tau*np.arange(NT)
     for i in range(NT):
         Z_est[i], total_time, max_time=generate_Z_est(
-                spectrum,population,ts[i],Nsample)
+                spectrum,population,ts[i],Nsample) #Approximate <\psi|\exp(-itH)|\psi> using Hadmard test
         total_time_all += total_time
         max_time_all = max(max_time_all, max_time)
+    #Step up and solve the optimization problem
     x0=np.array((0.5,0,lambda_prior))
-    res = qcels_opt(ts, Z_est, x0)
+    res = qcels_opt(ts, Z_est, x0)#Solve the optimization problem
+    #Update initial guess for next iteration
     ground_coefficient_QCELS=res.x[0]
     ground_coefficient_QCELS2=res.x[1]
     ground_energy_estimate_QCELS=res.x[2]
-    lambda_min=ground_energy_estimate_QCELS-np.pi/(2*tau)
-    lambda_max=ground_energy_estimate_QCELS+np.pi/(2*tau)
+    #Update the estimation interval
+    lambda_min=ground_energy_estimate_QCELS-np.pi/(2*tau) 
+    lambda_max=ground_energy_estimate_QCELS+np.pi/(2*tau) 
+    #Iteration
     for n_QCELS in range(N_level):
         Z_est=np.zeros(NT,dtype = 'complex_')
-        tau=T/NT/(2**(N_level-n_QCELS-1))
+        tau=T/NT/(2**(N_level-n_QCELS-1)) #generate a sequence of \tau_j
         ts=tau*np.arange(NT)
         for i in range(NT):
             Z_est[i], total_time, max_time=generate_Z_est(
-                    spectrum,population,ts[i],Nsample)
+                    spectrum,population,ts[i],Nsample) #Approximate <\psi|\exp(-itH)|\psi> using Hadmard test
             total_time_all += total_time
             max_time_all = max(max_time_all, max_time)
+        #Step up and solve the optimization problem
         x0=np.array((ground_coefficient_QCELS,ground_coefficient_QCELS2,ground_energy_estimate_QCELS))
-        bnds=((-np.inf,np.inf),(-np.inf,np.inf),(lambda_min,lambda_max))
-        res = qcels_opt(ts, Z_est, x0, bounds=bnds)
+        bnds=((-np.inf,np.inf),(-np.inf,np.inf),(lambda_min,lambda_max)) 
+        res = qcels_opt(ts, Z_est, x0, bounds=bnds)#Solve the optimization problem
+        #Update initial guess for next iteration
         ground_coefficient_QCELS=res.x[0]
         ground_coefficient_QCELS2=res.x[1]
         ground_energy_estimate_QCELS=res.x[2]
-        lambda_min=ground_energy_estimate_QCELS-np.pi/(2*tau)
-        lambda_max=ground_energy_estimate_QCELS+np.pi/(2*tau)
+        #Update the estimation interval
+        lambda_min=ground_energy_estimate_QCELS-np.pi/(2*tau) 
+        lambda_max=ground_energy_estimate_QCELS+np.pi/(2*tau) 
 
-    return ground_energy_estimate_QCELS, total_time_all, max_time_all
+    return res, total_time_all, max_time_all
 
 
 def qcels_smalloverlap(spectrum, population, T, NT, d, rel_gap, err_tol_rough, Nsample_rough, Nsample):
@@ -186,7 +188,7 @@ def qcels_smalloverlap(spectrum, population, T, NT, d, rel_gap, err_tol_rough, N
     max_time_all = 0.
 
     lambda_prior, total_time_prior, max_time_prior = get_estimated_ground_energy_rough(
-            d,err_tol_rough,spectrum,population,Nsample_rough,Nbatch=1)
+            d,err_tol_rough,spectrum,population,Nsample_rough,Nbatch=1) #Get the rough estimation of the ground state energy
     x = lambda_prior + rel_gap/2 #center of the eigenvalue filter
     total_time_all += total_time_prior
     max_time_all = max(max_time_all, max_time_prior)
@@ -197,31 +199,38 @@ def qcels_smalloverlap(spectrum, population, T, NT, d, rel_gap, err_tol_rough, N
     ts=tau*np.arange(NT)
     for i in range(NT):
         Z_est[i], total_time, max_time=generate_filtered_Z_est(
-                spectrum,population,ts[i],x,d,err_tol_rough,Nsample_rough,Nbatch=1)
+                spectrum,population,ts[i],x,d,err_tol_rough,Nsample_rough,Nbatch=1)#Approximate <\psi|\exp(-itH)|\psi> using Hadmard test
         total_time_all += total_time
         max_time_all = max(max_time_all, max_time)
+    #Step up and solve the optimization problem
     x0=np.array((0.5,0,lambda_prior))
-    res = qcels_opt(ts, Z_est, x0)
+    res = qcels_opt(ts, Z_est, x0)#Solve the optimization problem
+    #Update initial guess for next iteration
     ground_coefficient_QCELS=res.x[0]
     ground_coefficient_QCELS2=res.x[1]
     ground_energy_estimate_QCELS=res.x[2]
+    #Update the estimation interval
     lambda_min=ground_energy_estimate_QCELS-np.pi/(2*tau)
     lambda_max=ground_energy_estimate_QCELS+np.pi/(2*tau)
+    #Iteration
     for n_QCELS in range(N_level):
         Z_est=np.zeros(NT,dtype = 'complex_')
         tau=T/NT/(2**(N_level-n_QCELS-1))
         ts=tau*np.arange(NT)
         for i in range(NT):
             Z_est[i], total_time, max_time=generate_filtered_Z_est(
-                    spectrum,population,ts[i],x,d,err_tol_rough,Nsample,Nbatch=1)
+                    spectrum,population,ts[i],x,d,err_tol_rough,Nsample,Nbatch=1)#Approximate <\psi|\exp(-itH)|\psi> using Hadmard test
             total_time_all += total_time
             max_time_all = max(max_time_all, max_time)
+        #Step up and solve the optimization problem
         x0=np.array((ground_coefficient_QCELS,ground_coefficient_QCELS2,ground_energy_estimate_QCELS))
         bnds=((-np.inf,np.inf),(-np.inf,np.inf),(lambda_min,lambda_max))
-        res = qcels_opt(ts, Z_est, x0, bounds=bnds)
+        res = qcels_opt(ts, Z_est, x0, bounds=bnds)#Solve the optimization problem
+        #Update initial guess for next iteration
         ground_coefficient_QCELS=res.x[0]
         ground_coefficient_QCELS2=res.x[1]
         ground_energy_estimate_QCELS=res.x[2]
+        #Update the estimation interval
         lambda_min=ground_energy_estimate_QCELS-np.pi/(2*tau)
         lambda_max=ground_energy_estimate_QCELS+np.pi/(2*tau)
 
