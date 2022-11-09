@@ -86,7 +86,7 @@ def generate_Z_est(spectrum,population,t,Nsample):
     Z_est = complex(2*Re/Nsample-1,2*Im/Nsample-1)
     max_time = t
     total_time = t * Nsample
-    return Z_est, max_time, total_time 
+    return Z_est, total_time, max_time 
        
 
 def generate_spectrum_population(eigenenergies, population, p):
