@@ -3,7 +3,7 @@
 Quantum complex exponential least squares (QCELS) can be used to
 estimate the ground-state energy with reduced circuit depth. 
 
-Last revision: 11/2/2022
+Last revision: 11/15/2022
 """
 
 import scipy.io as sio
@@ -102,9 +102,8 @@ def generate_spectrum_population(eigenenergies, population, p):
 def qcels_opt_fun(x, ts, Z_est):
     NT = ts.shape[0]
     Z_fit=np.zeros(NT,dtype = 'complex_')
-    for i in range(NT):
-        Z_fit=(x[0]+1j*x[1])*np.exp(-1j*x[2]*ts)
-    return (np.linalg.norm(Z_fit-Z_est)/NT)
+    Z_fit=(x[0]+1j*x[1])*np.exp(-1j*x[2]*ts)
+    return (np.linalg.norm(Z_fit-Z_est)**2/NT)
 
 def qcels_opt(ts, Z_est, x0, bounds = None, method = 'SLSQP'):
 
