@@ -117,9 +117,9 @@ def qcels_opt(ts, Z_est, x0, bounds = None, method = 'SLSQP'):
 
 
 def qcels_largeoverlap(spectrum, population, T, NT, Nsample, lambda_prior):
-    """Multi-level QCELS for systems a large initial overlap.
+    """Multi-level QCELS for a system with a large initial overlap.
 
-    Description: The code of using Multi-level QCELS to estimate the ground state energy with large initial overlap
+    Description: The code of using Multi-level QCELS to estimate the ground state energy for a systems with a large initial overlap
 
     Args: eigenvalues of the Hamiltonian: spectrum; 
     overlaps between the initial state and eigenvectors: population; 
@@ -181,10 +181,10 @@ def qcels_largeoverlap(spectrum, population, T, NT, Nsample, lambda_prior):
 
 
 def qcels_smalloverlap(spectrum, population, T, NT, d, rel_gap, err_tol_rough, Nsample_rough, Nsample):
-    """Multi-level QCELS with a filtered data set for systems with a small initial overlap.
+    """Multi-level QCELS with a filtered data set for a system with a small initial overlap.
 
-    Description: The codes of using Multi-level QCELS and eigenvalue filter to estimate the ground state energy of 
-    systems that have small initial overlap
+    Description: The codes of using Multi-level QCELS and eigenvalue filter to estimate the ground state energy for
+    a system with a small initial overlap
 
     Args: eigenvalues of the Hamiltonian: spectrum; 
     overlaps between the initial state and eigenvectors: population; 
