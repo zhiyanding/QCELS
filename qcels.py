@@ -121,10 +121,16 @@ def qcels_largeoverlap(spectrum, population, T, NT, Nsample, lambda_prior):
 
     Description: The code of using Multi-level QCELS to estimate the ground state energy with large initial overlap
 
-    Args: eigenvalues of Hamiltonian: spectrum; overlaps between initial state and eigenvectors: population; 
-    the circuit depth: T; number of data pairs: NT; number of samples: Nsample; initial guess of \lambda_0: lambda_prior
+    Args: eigenvalues of the Hamiltonian: spectrum; 
+    overlaps between the initial state and eigenvectors: population; 
+    the depth for generating the data set: T; 
+    number of data pairs: NT; 
+    number of samples: Nsample; 
+    initial guess of \lambda_0: lambda_prior
 
-    Returns: an estimation of \lambda_0; maximal evolution time T_{max}; total evolution time T_{total}
+    Returns: an estimation of \lambda_0; 
+    maximal evolution time T_{max}; 
+    total evolution time T_{total}
 
     """
     total_time_all = 0.
@@ -180,11 +186,17 @@ def qcels_smalloverlap(spectrum, population, T, NT, d, rel_gap, err_tol_rough, N
     Description: The codes of using Multi-level QCELS and eigenvalue filter to estimate the ground state energy of 
     systems that have small initial overlap
 
-    Args: eigenvalues of Hamiltonian: spectrum; overlaps between initial state and eigenvectors: population; 
-    the circuit depth: T; number of data pairs: NT; number of samples for constructing eigenvalue filter: Nsample_rough; 
-    number of samples for generating data set: Nsample; initial guess of \lambda_0: lambda_prior
-
-    Returns: an estimation of \lambda_0; maximal evolution time T_{max}; total evolution time T_{total}
+    Args: eigenvalues of the Hamiltonian: spectrum; 
+    overlaps between the initial state and eigenvectors: population; 
+    the depth for generating the data set: T; 
+    number of data pairs: NT; 
+    number of samples for constructing the eigenvalue filter: Nsample_rough; 
+    number of samples for generating the data set: Nsample; 
+    initial guess of \lambda_0: lambda_prior
+    
+    Returns: an estimation of \lambda_0; 
+    maximal evolution time T_{max}; 
+    total evolution time T_{total}
 
     """
     total_time_all = 0.
