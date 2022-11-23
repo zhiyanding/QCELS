@@ -3,7 +3,7 @@
 Quantum complex exponential least squares (QCELS) can be used to
 estimate the ground-state energy with reduced circuit depth. 
 
-Last revision: 11/15/2022
+Last revision: 11/22/2022
 """
 
 import scipy.io as sio
@@ -119,11 +119,12 @@ def qcels_opt(ts, Z_est, x0, bounds = None, method = 'SLSQP'):
 def qcels_largeoverlap(spectrum, population, T, NT, Nsample, lambda_prior):
     """Multi-level QCELS for systems a large initial overlap.
 
-    Description:
+    Description: The code of using Multi-level QCELS to estimate the ground state energy with large initial overlap
 
-    Args:
+    Args: eigenvalues of Hamiltonian: spectrum; overlaps between initial state and eigenvectors: population; 
+    the circuit depth: T; number of data pairs: NT; number of samples: Nsample; initial guess of \lambda_0: lambda_prior
 
-    Returns:
+    Returns: an estimation of \lambda_0; maximal evolution time T_{max}; total evolution time T_{total}
 
     """
     total_time_all = 0.
@@ -176,11 +177,14 @@ def qcels_largeoverlap(spectrum, population, T, NT, Nsample, lambda_prior):
 def qcels_smalloverlap(spectrum, population, T, NT, d, rel_gap, err_tol_rough, Nsample_rough, Nsample):
     """Multi-level QCELS with a filtered data set for systems with a small initial overlap.
 
-    Description:
+    Description: The codes of using Multi-level QCELS and eigenvalue filter to estimate the ground state energy of 
+    systems that have small initial overlap
 
-    Args:
+    Args: eigenvalues of Hamiltonian: spectrum; overlaps between initial state and eigenvectors: population; 
+    the circuit depth: T; number of data pairs: NT; number of samples for constructing eigenvalue filter: Nsample_rough; 
+    number of samples for generating data set: Nsample; initial guess of \lambda_0: lambda_prior
 
-    Returns:
+    Returns: an estimation of \lambda_0; maximal evolution time T_{max}; total evolution time T_{total}
 
     """
     total_time_all = 0.
